@@ -1,5 +1,12 @@
 use std::process::Command;
 
+ pub fn open_folder(path: &String) {
+    let _ = Command::new("explorer")
+        .arg(path)
+        .output()
+        .expect("Failed to execute command");
+}
+
 pub fn download_audio(url: &String, path: &String) -> Result<String, String> {
     println!("DOWNLOADING {url}");
     let output = Command::new("yt-dlp")
