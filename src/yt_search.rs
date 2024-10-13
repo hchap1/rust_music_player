@@ -1,28 +1,27 @@
 use headless_chrome::Browser;
 use scraper::{Html, Selector};
 use std::time::Duration;
+use tokio::task;
 
 pub async fn web_scrape(query: &String) -> Result<String, String> {
     let formatted_query = query.replace(' ', "+");
     let search_url = format!("https://www.youtube.com/results?search_query={formatted_query}");
-    match Browser::default() {
-        Ok(browser) => {
-            match browser.new_tab() {
-                Ok(tab) => {
-                    tab.navigate_to(&search_url).map_err(|e| format!("Failed to access youtube: {e:?}"))?;
-                    tab.wait_until_navigated().map_err(|e| format!("Failed to wait until navigation: {e:?}"))?;
-                    tab.wait_for_element("ytd-video-renderer").map_err(|e| format!("Failed to load search results: {e:?}"))?;
-                    std::thread::sleep(Duration::from_secs(2)); 
-                    match tab.get_content() {
-                        Ok(html) => Ok(html),
-                        Err(e) => Err(format!("Failed to get source: {e:?}"))
-                    }
-                }
-                Err(e) => Err(format!("Failed to create tab: {e:?}"))
-            }
-        }
-        Err(e) => Err(format!("Failed to launch browser: {e:?}"))
-    }
+    
+    let result = task::spawn_blocking(move || {
+        let browser = Browser::default().map_err(|e| format!("Failed to launch browser: {e:?}"))?;
+        let tab = browser.new_tab().map_err(|e| format!("Failed to create tab: {e:?}"))?;
+        
+        tab.navigate_to(&search_url).map_err(|e| format!("Failed to access YouTube: {e:?}"))?;
+        tab.wait_until_navigated().map_err(|e| format!("Failed to wait until navigation: {e:?}"))?;
+        tab.wait_for_element("ytd-video-renderer").map_err(|e| format!("Failed to load search results: {e:?}"))?;
+        std::thread::sleep(Duration::from_secs(2));
+
+        tab.get_content().map_err(|e| format!("Failed to get source: {e:?}"))
+    })
+    .await
+    .map_err(|e| format!("Failed to join async task: {e:?}"))?;
+
+    result
 }
 
 pub fn get_top_result(html: &String) -> Option<String> {

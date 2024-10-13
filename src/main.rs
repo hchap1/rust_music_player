@@ -1,8 +1,10 @@
 mod yt_search;
 mod yt_dlp;
+mod download;
+mod playlist;
 
-use yt_search::{get_top_result, web_scrape};
-use yt_dlp::{open_folder, download_audio};
+use download::DownloadTask;
+use yt_dlp::open_folder;
 use std::fs::create_dir;
 use std::env::{args, Args, var};
 use std::collections::HashSet;
@@ -24,11 +26,11 @@ fn parse_args(arguments: Args) -> (Option<String>, Vec<String>, HashSet<String>)
 async fn main() {
     let help = r#"
     rust_music_player <COMMAND> <FLAGS/ARGUMENTS>
-                        |
-     -------------------
-    |
-    download <arg>  -u: Direct URL (otherwise search)
-    play     <SONG> -c: Shuffle afterwards
+                        |          |
+     -------------------           |
+    |                              |
+    download <arg>  -u: Direct URL (otherwise search) -f: Read songs in from file
+    play     <arg>  -s: Play a specific song, in this case, stop after unless -c: Shuffle afterwards
     shuffle
     stop     <arg>  -t: Stop after <arg> minutes
     pause
@@ -59,26 +61,17 @@ async fn main() {
             return;
         }
         "download" => {
-            let url: String = match flags.contains(&String::from("-u")) {
-                true => match args_vec.get(2) {
-                    Some(address) => address.to_string(),
-                    None => panic!("Expected download <URL> -u")
-                },
-                false => {
-                    let query: String = match args_vec.get(2) {
-                        Some(search) => search.to_string(),
-                        None => panic!("Expected download <QUERY>")
-                    };
-                    let html = web_scrape(&query).await.unwrap();
-                    match get_top_result(&html) {
-                        Some(result) => result,
-                        None => panic!("No results found for query {query}")
-                    }
+            let download_task: DownloadTask = match DownloadTask::from_args(args_vec, flags, programdir) {
+                Ok(task) => task,
+                Err(e) => {
+                    eprintln!("{e:?}");
+                    return;
                 }
             };
-            match download_audio(&url, &programdir) {
-                Ok(_) => println!("Successfully downloaded {url}"),
-                Err(e) => panic!("{e}")
+            if let Err(errors) = download_task.download().await {
+                for error in errors {
+                    eprintln!("{error}");
+                }
             }
             return;
         }
