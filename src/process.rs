@@ -1,15 +1,9 @@
+use crate::music::Player;
 use std::sync::{Arc, Mutex};
 use std::thread::{sleep, spawn};
 use std::time::Duration;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-
-struct Player {
-    songs: Vec<String>,
-    queue: Sink,
-    index: usize,
-    commands: Arc<Mutex<Vec<String>>>
-}
 
 fn receive_commands(mut stream: TcpStream, commander: Arc<Mutex<Commander>>, message_stack: Arc<Mutex<Vec<String>>>) {
     loop {
