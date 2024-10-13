@@ -1,7 +1,6 @@
 mod yt_search;
 mod yt_dlp;
 mod download;
-mod playlist;
 mod music;
 mod process;
 

@@ -35,7 +35,7 @@ struct Commander {
     alive: bool
 }
 
-pub fn run_server(programdir: &str) {
+pub fn run_server(player: Player) {
     match TcpListener::bind("127.0.0.1:7878") {
         Ok(listener) => {
             let mut message_dump: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(vec![]));
@@ -59,7 +59,7 @@ pub fn run_server(programdir: &str) {
                     {
                         let commander = commander.lock().unwrap();
                         if commander.new_com {
-                            
+                            let message_dump = message_dump.lock().unwrap(); 
                         }
                     }
                 }
