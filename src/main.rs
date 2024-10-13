@@ -2,12 +2,14 @@ mod yt_search;
 mod yt_dlp;
 mod download;
 mod playlist;
+mod music;
 
 use download::DownloadTask;
 use yt_dlp::open_folder;
 use std::fs::create_dir;
 use std::env::{args, Args, var};
 use std::collections::HashSet;
+use music::play_song;
 
 fn parse_args(arguments: Args) -> (Option<String>, Vec<String>, HashSet<String>) {
     let mut args_vec: Vec<String> = vec![];
@@ -30,7 +32,7 @@ async fn main() {
      -------------------           |
     |                              |
     download <arg>  -u: Direct URL (otherwise search) -f: Read songs in from file
-    play     <arg>  -s: Play a specific song, in this case, stop after unless -c: Shuffle afterwards
+    play     <song> -c: Shuffle afterwards
     shuffle
     stop     <arg>  -t: Stop after <arg> minutes
     pause
@@ -76,7 +78,14 @@ async fn main() {
             return;
         }
         "play" => {
-
+            match args_vec.get(2) {
+                Some(song) => {
+                    play_song(song, &programdir.as_str());
+                }
+                None => {
+                    eprintln!("Expected play <song>");
+                }
+            }
         }
         _ => eprintln!("Unknown command: {command}")
     }

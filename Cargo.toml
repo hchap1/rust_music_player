@@ -9,5 +9,6 @@ edition = "2021"
 futures = "0.3.31"
 headless_chrome = "*"
 regex = "1.11.0"
+rodio = "0.19.0"
 scraper = "*"
 tokio = { version = "*", features = ["full"] }
