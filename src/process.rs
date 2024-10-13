@@ -2,7 +2,7 @@ use crate::music::Player;
 use std::sync::{Arc, Mutex};
 use std::thread::{sleep, spawn};
 use std::time::Duration;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::net::{TcpListener, TcpStream};
 
 fn receive_commands(mut stream: TcpStream, commander: Arc<Mutex<Commander>>, message_stack: Arc<Mutex<Vec<String>>>) {
@@ -38,20 +38,20 @@ struct Commander {
 pub fn run_server(player: Player) {
     match TcpListener::bind("127.0.0.1:7878") {
         Ok(listener) => {
-            let mut message_dump: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(vec![]));
-            let mut dump_ref = Arc::clone(&message_dump);
+            let message_dump: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(vec![]));
+            let dump_ref = Arc::clone(&message_dump);
             loop {
-                let (recv_stream, addr) = match listener.accept() {
+                let (recv_stream, _addr) = match listener.accept() {
                     Ok((s, a)) => (s, a),
                     Err(_) => {
                         eprintln!("Could not accept commander.");
                         return;
                     }
                 };
-                let send_stream = recv_stream.try_clone().unwrap();
+                let _send_stream = recv_stream.try_clone().unwrap();
                 let commander = Arc::new(Mutex::new(Commander{ new_com: false, alive: true }));
                 let commander_ref = Arc::clone(&commander);
-                let commander_thread = spawn(|| {
+                let _commander_thread = spawn(|| {
                     receive_commands(recv_stream, commander_ref, dump_ref);
                 });
                 loop {
@@ -60,6 +60,17 @@ pub fn run_server(player: Player) {
                         let commander = commander.lock().unwrap();
                         if commander.new_com {
                             let message_dump = message_dump.lock().unwrap(); 
+                            for message in message_dump.iter() {
+                                match message.as_str() {
+                                    "pause" => {
+                                        player.queue.pause();
+                                    }
+                                    "resume" => {
+                                        player.queue.play();
+                                    }
+                                    _ => { }
+                                }
+                            }
                         }
                     }
                 }

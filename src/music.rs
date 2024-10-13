@@ -49,14 +49,14 @@ pub fn shuffle(songs: &mut Vec<String>) {
 }
 
 pub struct Player {
-    songs: Vec<String>,
-    queue: Sink,
-    index: usize,
-    commands: Arc<Mutex<Vec<String>>>
+    pub songs: Vec<String>,
+    pub queue: Sink,
+    pub index: usize,
+    pub commands: Arc<Mutex<Vec<String>>>
 }
 
 impl Player {
-    fn single(song: String, programdir: String) -> Result<Self, String> {
+    pub fn single(song: String, programdir: String) -> Result<Self, String> {
         match is_song_downloaded(&programdir.as_str(), &song) {
             true => {
                 let songs = vec![song];

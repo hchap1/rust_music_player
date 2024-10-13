@@ -9,7 +9,8 @@ use yt_dlp::open_folder;
 use std::fs::create_dir;
 use std::env::{args, Args, var};
 use std::collections::HashSet;
-use music::play_song;
+use process::run_server;
+use music::Player;
 
 fn parse_args(arguments: Args) -> (Option<String>, Vec<String>, HashSet<String>) {
     let mut args_vec: Vec<String> = vec![];
@@ -49,6 +50,8 @@ async fn main() {
     let arguments: Args = args();
     let (command, args_vec, flags) = parse_args(arguments);
 
+    let is_process = flags.contains(&String::from("-process"));
+
     if let None = command {
         println!("{help}");
         return;
@@ -80,7 +83,17 @@ async fn main() {
         "play" => {
             match args_vec.get(2) {
                 Some(song) => {
-                    play_song(song, &programdir.as_str());
+                    if is_process {
+                        let player: Player = match Player::single(song.to_string(), programdir) {
+                            Ok(player) => player,
+                            Err(e) => {
+                                eprintln!("{e:?}");
+                                return;
+                            }
+                        };
+                        run_server(player);
+                        return;
+                    }
                 }
                 None => {
                     eprintln!("Expected play <song>");
