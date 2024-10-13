@@ -3,6 +3,7 @@ mod yt_dlp;
 mod download;
 mod playlist;
 mod music;
+mod process;
 
 use download::DownloadTask;
 use yt_dlp::open_folder;
