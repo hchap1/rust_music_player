@@ -12,7 +12,7 @@ pub async fn download_audio(url: &String, path: &str, name: String) -> Result<St
     println!("DOWNLOADING {url}");
     
     let output = Command::new("yt-dlp")
-        .args(&["-x", "-o", format!("{path}/{name}.mp3").as_str(), "--audio-format", "mp3", url])
+        .args(&["-f", "bestaudio[ext=webm]", "-o", format!("{path}/{name}.mp3").as_str(), "--audio-format", "mp3", url])
         .output()
         .await
         .map_err(|e| format!("Failed to execute command: {e:?}"))?;
