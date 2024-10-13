@@ -1,6 +1,7 @@
-use headless_chrome::Browser;
+use headless_chrome::{Browser, LaunchOptions};
 use scraper::{Html, Selector};
 use std::time::Duration;
+use std::ffi::OsStr;
 use tokio::task;
 
 pub async fn web_scrape(query: &String) -> Result<String, String> {
@@ -8,13 +9,22 @@ pub async fn web_scrape(query: &String) -> Result<String, String> {
     let search_url = format!("https://www.youtube.com/results?search_query={formatted_query}");
     
     let result = task::spawn_blocking(move || {
-        let browser = Browser::default().map_err(|e| format!("Failed to launch browser: {e:?}"))?;
+        let browser = Browser::new(LaunchOptions {
+            headless: false,
+            args: vec![
+                OsStr::new("--disable-gpu"),
+                OsStr::new("--no-sandbox"),
+                OsStr::new("--window-size=800,800"),
+            ],
+            ..Default::default()
+        }).map_err(|e| format!("Failed to launch browser: {e:?}"))?;
+
         let tab = browser.new_tab().map_err(|e| format!("Failed to create tab: {e:?}"))?;
-        
         tab.navigate_to(&search_url).map_err(|e| format!("Failed to access YouTube: {e:?}"))?;
         tab.wait_until_navigated().map_err(|e| format!("Failed to wait until navigation: {e:?}"))?;
         tab.wait_for_element("ytd-video-renderer").map_err(|e| format!("Failed to load search results: {e:?}"))?;
-        std::thread::sleep(Duration::from_secs(2));
+        
+        std::thread::sleep(Duration::from_secs(2));  // Wait for results to load
 
         tab.get_content().map_err(|e| format!("Failed to get source: {e:?}"))
     })

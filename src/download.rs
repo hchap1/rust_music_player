@@ -7,7 +7,7 @@ use futures::future::join_all;
 use std::sync::{Arc, Mutex};
 
 pub async fn download_query(programdir: &str, query: &String, error_dump: Arc<Mutex<Vec<String>>>) {
-    let html = web_scrape(&query).await.unwrap();
+    let html = web_scrape(&format!("{query} song")).await.unwrap();
     let url = match get_top_result(&html) {
         Some(result) => result,
         None => panic!("No results found for query {query}")
@@ -15,7 +15,7 @@ pub async fn download_query(programdir: &str, query: &String, error_dump: Arc<Mu
     if is_song_downloaded(programdir, query) {
         return;
     }
-    match download_audio(&url, programdir).await {
+    match download_audio(&url, programdir, query.to_string()).await {
         Ok(_) => println!("Successfully downloaded {url}"),
         Err(e) => {
             let mut error_dump = error_dump.lock().unwrap();

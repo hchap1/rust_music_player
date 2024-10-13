@@ -8,11 +8,11 @@ use tokio::process::Command;
         .expect("Failed to execute command");
 }
 
-pub async fn download_audio(url: &String, path: &str) -> Result<String, String> {
+pub async fn download_audio(url: &String, path: &str, name: String) -> Result<String, String> {
     println!("DOWNLOADING {url}");
     
     let output = Command::new("yt-dlp")
-        .args(&["-x", "-P", path, "--audio-format", "mp3", url])
+        .args(&["-x", "-o", format!("{path}/{name}.mp3").as_str(), "--audio-format", "mp3", url])
         .output()
         .await
         .map_err(|e| format!("Failed to execute command: {e:?}"))?;
