@@ -1,9 +1,11 @@
 mod yt_search;
+mod commander;
 mod yt_dlp;
 mod download;
 mod music;
 mod process;
 
+use commander::{CommanderController, launch_process};
 use download::DownloadTask;
 use yt_dlp::open_folder;
 use std::fs::create_dir;
@@ -84,19 +86,62 @@ async fn main() {
             match args_vec.get(2) {
                 Some(song) => {
                     if is_process {
-                        let player: Player = match Player::single(song.to_string(), programdir) {
+                        let player: Player = match Player::single(song.to_string(), &programdir) {
                             Ok(player) => player,
                             Err(e) => {
                                 eprintln!("{e:?}");
                                 return;
                             }
                         };
-                        run_server(player);
+                        run_server(programdir, player);
                         return;
+                    } else {
+                        if let Some(_) = CommanderController::connect() {
+                            eprintln!("Process already running (TODO: change existing process.)");
+                            return;
+                        }
+                        println!("Starting process.");
+                        launch_process(args_vec);
                     }
                 }
                 None => {
                     eprintln!("Expected play <song>");
+                }
+            }
+        }
+        "pause" => {
+            if !is_process {
+                match CommanderController::connect() {
+                    Some(mut commander) => {
+                        commander.send_command(&command);
+                    }
+                    None => {
+                        eprintln!("No process running.");
+                    }
+                }
+            }
+        }
+        "resume" => {
+            if !is_process {
+                match CommanderController::connect() {
+                    Some(mut commander) => {
+                        commander.send_command(&command);
+                    }
+                    None => {
+                        eprintln!("No process running.");
+                    }
+                }
+            }
+        }
+        "stop" => {
+            if !is_process {
+                match CommanderController::connect() {
+                    Some(mut commander) => {
+                        commander.send_command(&command);
+                    }
+                    None => {
+                        eprintln!("No process running.");
+                    }
                 }
             }
         }

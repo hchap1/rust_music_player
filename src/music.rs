@@ -1,8 +1,10 @@
 use rodio::{OutputStream, Sink, Decoder};
+use tokio::time::sleep;
 use std::io::BufReader;
 use std::fs::File;
 use std::sync::{Arc, Mutex};
 use std::fs::read_dir;
+use std::time::Duration;
 use rand::{seq::SliceRandom, thread_rng};
 use regex::Regex;
 
@@ -50,26 +52,16 @@ pub fn shuffle(songs: &mut Vec<String>) {
 
 pub struct Player {
     pub songs: Vec<String>,
-    pub queue: Sink,
-    pub index: usize,
     pub commands: Arc<Mutex<Vec<String>>>
 }
 
 impl Player {
-    pub fn single(song: String, programdir: String) -> Result<Self, String> {
+    pub fn single(song: String, programdir: &String) -> Result<Self, String> {
         match is_song_downloaded(&programdir.as_str(), &song) {
             true => {
                 let songs = vec![song];
-                let sink: Sink = match play_songs(&songs, programdir.as_str()) {
-                    Ok(sink) => sink,
-                    Err(_) => {
-                        return Err(String::from("Failed to play song."));
-                    }
-                };
                 Ok(Self {
                     songs,
-                    queue: sink,
-                    index: 0,
                     commands: Arc::new(Mutex::new(vec![]))
                 })
             }
@@ -78,23 +70,4 @@ impl Player {
             }
         }
     }
-}
-
-pub fn play_songs(names: &Vec<String>, programdir: &str) -> Result<Sink, String> {
-    let (_stream, handle) = match OutputStream::try_default() {
-        Ok(output_stream) => output_stream,
-        Err(e) => return Err(format!("{e:?}"))
-    };
-    let sink = match Sink::try_new(&handle) {
-        Ok(sink) => sink,
-        Err(e) => return Err(format!("{e:?}"))
-    };
-    for name in names {
-        let file = match File::open(format!("{programdir}/{name}.mp3")) {
-            Ok(file) => file,
-            Err(_) => { eprintln!("No such song: {name}.mp3"); continue; }
-        };
-        sink.append(Decoder::new(BufReader::new(file)).unwrap());
-    }
-    Ok(sink)
 }
